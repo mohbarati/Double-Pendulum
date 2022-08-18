@@ -1,4 +1,4 @@
-from math import cos, sin, sqrt
+from math import sqrt, copysign
 
 import pygame
 from pygame.locals import *
@@ -19,25 +19,27 @@ def ceiling(x, y):
     pygame.draw.polygon(
         sc,
         (100, 255, 30),
-        [(x - 50, y - 50), (x + 50, y - 50), (x + 50, y), (x - 50, y),],
+        [
+            (x - 50, y - 50),
+            (x + 50, y - 50),
+            (x + 50, y),
+            (x - 50, y),
+        ],
     )
 
 
 def distance(x, y):
     """Finding magnitude of a vector
-
     Args:
         x (float): x-component
         y (float): y-component
-
     Returns:
         float : vector size
     """
-    return sqrt(x ** 2 + y ** 2)
+    return sqrt(x**2 + y**2)
 
 
 def draw_circle(c, x, y, r):
-
     pygame.draw.circle(sc, c, (int(x + 300), int(y + 300)), r)
 
 
@@ -47,14 +49,14 @@ def draw_line(c, x1, y1, x2, y2):
     )
 
 
-# object current co-ordinates
+# constants and initial condition
 xb = 0
 yb = 0
 x1 = 50
 y1 = -150
 d1 = distance(x1, y1)
 l1 = d1
-k1 = 100
+k1 = 1000
 m1 = 1
 vx1 = 0
 vy1 = 0
@@ -62,13 +64,15 @@ x2 = 150
 y2 = -150
 d2 = distance(x2 - x1, y2 - y1)
 l2 = d2
-k2 = 100
+k2 = 1000
 m2 = 1
 vx2 = 0
 vy2 = 0
 g = -1
 dt = 0.01
 r = 10
+damping = 0.001
+
 
 draw_circle((255, 0, 255), x1, y1, r)
 draw_circle((0, 255, 0), x2, y2, r)
@@ -89,10 +93,19 @@ while cont:
     T2 = -k2 * (d2 - l2)
     T1 = -k1 * (d1 - l1)
 
-    ax2 = T2 / m2 * (x2 - x1) / d2
-    ay2 = T2 / m2 * (y2 - y1) / d2 - g
-    ax1 = T1 / m1 * (x1) / d1 + T2 / m1 * (x1 - x2) / d2
-    ay1 = T1 / m1 * (y1) / d1 + T2 / m1 * (y1 - y2) / d2 - g
+    ax2 = T2 / m2 * (x2 - x1) / d2 - damping * abs(vx2) * copysign(1, vx2)
+    ay2 = T2 / m2 * (y2 - y1) / d2 - g - damping * abs(vx2) * copysign(1, vy2)
+    ax1 = (
+        T1 / m1 * (x1) / d1
+        + T2 / m1 * (x1 - x2) / d2
+        - damping * abs(vx2) * copysign(1, vx1)
+    )
+    ay1 = (
+        T1 / m1 * (y1) / d1
+        + T2 / m1 * (y1 - y2) / d2
+        - g
+        - damping * abs(vx2) * copysign(1, vy1)
+    )
 
     vx2 += ax2 * dt
     vy2 += ay2 * dt
